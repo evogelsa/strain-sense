@@ -59,5 +59,5 @@ void loop() {
         Serial.println(event.acceleration.z);
 
     }
-    delay(1/60);
+    delay(25);
 }
