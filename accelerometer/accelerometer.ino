@@ -56,6 +56,8 @@ void loop() {
         Serial.print(event.acceleration.y);
 
         Serial.print("\tZ:");
-        Serial.print(event.acceleration.z);
+        Serial.println(event.acceleration.z);
+
     }
+    delay(1/60);
 }
