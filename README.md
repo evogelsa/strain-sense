@@ -1,1 +1,1 @@
-'# Wearable Sensors Final Project' 
+# Wearable Sensors Final Project
