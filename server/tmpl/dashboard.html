@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Strain Sense</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/wearables/static/styles.css">
+  </head>
+
+  <body>
+    <center><h2>{{.Date}}</h2></center>
+    <center><h4>{{.User}}</h4></center>
+    <form action="/wearables/dashboard" method="post">
+      <div class="container">
+        <div>
+          Rate your lower back pain. Move the slider all the way to the left for
+          no pain, and move the slider all the way to the right for severe pain.
+        </div>
+          <label for="rating">Rate LBP</label>
+          <input type="range" id="rating" name="rating" min="1" max="10">
+          <input type="submit">
+      </div>
+    </form>
+    <center><h2>{{.Img}}</h2></center>
+  </body>
+
+</html>

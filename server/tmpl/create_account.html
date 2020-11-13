@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Strain Sense</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/wearables/static/styles.css">
+  </head>
+
+  <body>
+    <center><h2>{{.Date}}</h2></center>
+    <center><h4>Please do not use a real password. This form is not secure.</h4></center>
+    <form action="/wearables/create" method="post">
+      <div class="container">
+        <label for="uname"><b>Username</b></label>
+        <input type="text" placeholder="Enter Username" name="uname" required>
+        <label for="psw1"><b>Password</b></label>
+        <input type="password" placeholder="Enter Password" name="psw1" required>
+        <label for="psw2"><b>Confirm Password</b></label>
+        <input type="password" placeholder="Retype Password" name="psw2" required>
+        <button type="submit">Login</button>
+      </div>
+    </form>
+  </body>
+
+</html>

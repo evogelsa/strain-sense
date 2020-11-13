@@ -1,0 +1,56 @@
+h2 {
+  color: #CFCFCF;
+}
+
+h4 {
+  color: #CFCFCF;
+}
+
+div {
+  color: #CFCFCF;
+  font-size: 14px;
+}
+
+body {
+  background-color: #1F1A24;
+}
+
+input[type=text], input[type=password] {
+  width: 100%;
+  padding: 8px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #3E354A;
+  color: #CFCFCF;
+  padding: 12px 0;
+  display: inline-block;
+  border: 1px solid #11061C;
+  border-radius: 4px;
+  width: 100%;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.container {
+  padding: 16px;
+}
+
+span.pwd {
+  float: right;
+  padding-top: 16px;
+}
+
+@media screen and (max-width: 300px) {
+  span.pwd {
+    display: block;
+    float: none;
+  }
+}
