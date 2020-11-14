@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/gob"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -82,8 +83,10 @@ func AuthenticateLogin(w http.ResponseWriter, r *http.Request) {
 func DisplayLogin(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles(TEMPLATES + "login.html"))
 
+	t := time.Now()
+	date := fmt.Sprintf("%v %v %v", t.Day(), t.Month(), t.Year())
 	data := loginTemplate{
-		Date: time.Now().Format(time.RFC850)[:17],
+		Date: date,
 	}
 
 	err := tmpl.Execute(w, data)
