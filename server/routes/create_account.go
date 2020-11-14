@@ -43,8 +43,10 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 func DisplayCreate(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles(TEMPLATES + "create_account.html"))
 
+	t := time.Now()
+	date := fmt.Sprintf("%v %v %v", t.Day(), t.Month(), t.Year())
 	data := createTemplate{
-		Date: time.Now().Format(time.RFC850)[:17],
+		Date: date,
 	}
 
 	err := tmpl.Execute(w, data)
