@@ -8,11 +8,15 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/gomodule/redigo/redis"
+	"github.com/satori/go.uuid"
 )
 
 // credentials is map from [user] to pwd
 var credentials map[string]string
 var loadedCreds bool
+var Cache redis.Conn
 
 type loginTemplate struct {
 	Date string
@@ -74,6 +78,19 @@ func AuthenticateLogin(w http.ResponseWriter, r *http.Request) {
 
 	pwdCred, ok := credentials[uname]
 	if ok && pwd == pwdCred {
+		// create session token and add to cache
+		sessionToken := uuid.NewV4().String()
+		_, err = Cache.Do("SETEX", sessionToken, "3600", uname)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:    "session_token",
+			Value:   sessionToken,
+			Expires: time.Now().Add(time.Hour),
+		})
+
 		http.Redirect(w, r, "/wearables/dashboard", http.StatusSeeOther)
 	} else {
 		DisplayLogin(w, r)

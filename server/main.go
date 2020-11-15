@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 
 	"github.iu.edu/evogelsa/strain-sense/routes"
@@ -39,6 +40,15 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	return f, nil
 }
 
+func initCache() {
+	conn, err := redis.DialURL("redis://localhost")
+	if err != nil {
+		panic(err)
+	}
+
+	routes.Cache = conn
+}
+
 // newRouter creates a new mux router with the desired paths and structures
 func newRouter() *mux.Router {
 	// create new router
@@ -59,8 +69,8 @@ func newRouter() *mux.Router {
 }
 
 func main() {
+	initCache()
 	router := newRouter()
-
 	log.Fatal(http.ListenAndServe(
 		PORT,
 		router,

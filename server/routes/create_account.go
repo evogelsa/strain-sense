@@ -30,18 +30,37 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 
 	_, exist := credentials[uname]
 	if exist {
-		fmt.Fprintf(w, "User already exists")
+		tmpl := template.Must(template.ParseFiles(
+			TEMPLATES + "user_exists.html",
+		))
+		err := tmpl.Execute(w, nil)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	} else if !exist && pwd1 != pwd2 {
-		fmt.Fprintf(w, "Passwords don't match'")
+		tmpl := template.Must(template.ParseFiles(
+			TEMPLATES + "password_no_match.html",
+		))
+		err := tmpl.Execute(w, nil)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	} else if !exist && pwd1 == pwd2 {
 		credentials[uname] = pwd1
-		fmt.Fprintf(w, "User created")
+		tmpl := template.Must(template.ParseFiles(
+			TEMPLATES + "user_created.html",
+		))
+		err := tmpl.Execute(w, nil)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
-
 }
 
 func DisplayCreate(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles(TEMPLATES + "create_account.html"))
+	tmpl := template.Must(template.ParseFiles(
+		TEMPLATES + "create_account.html",
+	))
 
 	t := time.Now()
 	date := fmt.Sprintf("%v %v %v", t.Day(), t.Month(), t.Year())
@@ -53,5 +72,4 @@ func DisplayCreate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
 }
