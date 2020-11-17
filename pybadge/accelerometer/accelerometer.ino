@@ -49,15 +49,20 @@ void loop() {
         //arcada.display->print(event.acceleration.z, 1);
 
         // print the accelerometer data to serial plotter
-        Serial.print("\tX:");
+        /* Serial.print("\tX:"); */
+        /* Serial.print(event.acceleration.x); */
+        /*  */
+        /* Serial.print("\tY:"); */
+        /* Serial.print(event.acceleration.y); */
+        /*  */
+        /* Serial.print("\tZ:"); */
+        /* Serial.println(event.acceleration.z); */
         Serial.print(event.acceleration.x);
-
-        Serial.print("\tY:");
+        Serial.print(",");
         Serial.print(event.acceleration.y);
-
-        Serial.print("\tZ:");
-        Serial.println(event.acceleration.z);
-
+        Serial.print(",");
+        Serial.print(event.acceleration.z);
+        Serial.print("\n");
     }
     delay(25);
 }
