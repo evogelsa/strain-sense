@@ -66,5 +66,5 @@ while True:
 	if key == ord("s"):
 		vals = plotter.get_data()
 		# np.savez("data/valz", vals)
-		np.savetxt("data/accel_data.csv", vals, delimeter=",")
+		np.savetxt("data/accel_data.csv", vals, delimiter=",")
 		# print(vals.shape)
