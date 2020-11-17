@@ -40,7 +40,8 @@ class Plotter:
 		self.nlines = nlines
 		self.bgCol = bgColor
 		self.tickCol = tickCol
-		self.vals = [deque(maxlen=npoints) for i in range(nlines)]
+		# self.vals = [deque(maxlen=npoints) for i in range(nlines)]
+		self.vals = [np.zeros((3, npoints)) for i in range(nlines)]
 		for i in self.vals:
 			for j in range(len(i)):
 				i[j] = 0
@@ -136,7 +137,13 @@ class Plotter:
 		#value += int(self.img.shape[0]/2)
 		self.vals[lineIndex].append(float(value)) if left else self.vals[lineIndex].append((value))
 	def get_data(self):
-		return np.asarray(self.vals, dtype=np.float64)
+		arr = np.zeros((self.vals.shape))
+		try:
+		 	arr = np.asarray(self.vals, dtype=np.float64)
+		except:
+			print(self.vals[-1])
+			arr = []
+		return arr
 
 def mapVal(val, inMin, inMax, outMin = 0, outMax = 1):
 	if inMin < inMax:
