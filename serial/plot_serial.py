@@ -4,6 +4,9 @@ import time
 import FindSerial
 from serutils import *
 #from matplotlib import pyplot as plt
+
+N_DATAPOINTS = 800
+
 port = FindSerial.serial_ports()[0]
 ser = serial.Serial(
 	port=port,\
@@ -12,7 +15,7 @@ ser = serial.Serial(
 	stopbits=serial.STOPBITS_ONE,\
 	bytesize=serial.EIGHTBITS,\
 	timeout=0)
-plotter = Plotter((800,300), npoints=200, nlines=3, names=["X","Y","Z"], colors=[(255,0,0),(0,255,0),(0,0,255)], p_min=-180, p_max=180)
+plotter = Plotter((max(N_DATAPOINTS, 800),300), npoints=N_DATAPOINTS, nlines=3, names=["X","Y","Z"], colors=[(255,0,0),(0,255,0),(0,0,255)], p_min=-180, p_max=180)
 print("connected to: " + ser.portstr)
 count=1
 sensor = "A0"
