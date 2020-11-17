@@ -12,7 +12,7 @@ ser = serial.Serial(
 	stopbits=serial.STOPBITS_ONE,\
 	bytesize=serial.EIGHTBITS,\
 	timeout=0)
-plotter = Plotter((800,300), npoints=800, nlines=3, names=["X","Y","Z"], colors=[(255,0,0),(0,255,0),(0,0,255)], p_min=-180, p_max=180)
+plotter = Plotter((800,300), npoints=200, nlines=3, names=["X","Y","Z"], colors=[(255,0,0),(0,255,0),(0,0,255)], p_min=-180, p_max=180)
 print("connected to: " + ser.portstr)
 count=1
 sensor = "A0"
@@ -64,7 +64,8 @@ while True:
 	if key == ord("q"):
 		break
 	if key == ord("s"):
-		vals = plotter.get_data()
+		vals = np.transpose(plotter.get_data())
 		# np.savez("data/valz", vals)
+		print(vals.shape)
 		np.savetxt("data/accel_data.csv", vals, delimiter=",")
 		# print(vals.shape)
