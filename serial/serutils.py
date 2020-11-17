@@ -136,7 +136,7 @@ class Plotter:
 		#value += int(self.img.shape[0]/2)
 		self.vals[lineIndex].append((value)) if left else self.vals[lineIndex].append((value))
 	def get_data(self):
-		return np.asarray(self.vals, dtype=object)
+		return np.asarray(self.vals, dtype=np.float64)
 
 def mapVal(val, inMin, inMax, outMin = 0, outMax = 1):
 	if inMin < inMax:
