@@ -3,7 +3,7 @@ serial/data/
 
 # server
 server/creds
-server/dump.rdp
+server/dump.rdb
 
 ##################################
 # Default python gitignore below #

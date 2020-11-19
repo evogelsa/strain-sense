@@ -25,8 +25,8 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	uname := r.PostForm.Get("uname")
-	pwd1 := r.PostForm.Get("psw1")
-	pwd2 := r.PostForm.Get("psw2")
+	pwd1 := r.PostForm.Get("pwd1")
+	pwd2 := r.PostForm.Get("pwd2")
 
 	_, exist := credentials[uname]
 	if exist {

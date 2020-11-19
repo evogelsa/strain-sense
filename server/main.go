@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	ROOT_PATH = "/wearables"
-	STATIC    = ROOT_PATH + "/static"
-	PORT      = ":32321"
+	ROOT   = "/wearables"
+	STATIC = ROOT + "/static"
+	PORT   = ":32321"
 )
 
 // neuteredFileSystem is a file system that prevents directory listing
@@ -59,11 +59,12 @@ func newRouter() *mux.Router {
 	router.PathPrefix(STATIC).Handler(http.StripPrefix(STATIC, fs))
 
 	// define all routes
-	router.HandleFunc(ROOT_PATH+"/login", routes.DisplayLogin).Methods("GET")
-	router.HandleFunc(ROOT_PATH+"/login", routes.AuthenticateLogin).Methods("POST")
-	router.HandleFunc(ROOT_PATH+"/create", routes.DisplayCreate).Methods("GET")
-	router.HandleFunc(ROOT_PATH+"/create", routes.CreateAccount).Methods("POST")
-	router.HandleFunc(ROOT_PATH+"/dashboard", routes.DisplayDashboard).Methods("GET")
+	router.HandleFunc(ROOT+"/login", routes.DisplayLogin).Methods("GET")
+	router.HandleFunc(ROOT+"/login", routes.AuthenticateLogin).Methods("POST")
+	router.HandleFunc(ROOT+"/create", routes.DisplayCreate).Methods("GET")
+	router.HandleFunc(ROOT+"/create", routes.CreateAccount).Methods("POST")
+	router.HandleFunc(ROOT+"/dashboard", routes.DisplayDashboard).Methods("GET")
+	//router.HandleFunc(ROOT+"/dashboardsend", routes.SendUserData).Methods("POST")
 
 	return router
 }

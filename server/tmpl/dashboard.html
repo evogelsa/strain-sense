@@ -21,7 +21,11 @@
         </div>
       </div>
     </form>
-    <center><h2>{{.Img}}</h2></center>
+    <center>
+      {{range .Imgs}}
+        <img src={{.Name}}>
+      {{end}}
+    </center>
   </body>
 
 </html>
