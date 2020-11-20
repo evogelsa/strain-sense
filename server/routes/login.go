@@ -83,10 +83,8 @@ func AuthenticateLogin(w http.ResponseWriter, r *http.Request) {
 			Expires: time.Now().Add(time.Hour),
 		})
 
-		fmt.Println("GOOD:", uname, pwd, pwdCred, ok)
 		http.Redirect(w, r, "/wearables/dashboard", http.StatusSeeOther)
 	} else {
-		fmt.Println("BAD:", uname, pwd, pwdCred, ok)
 		DisplayLogin(w, r)
 	}
 }
