@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -20,15 +21,15 @@ type imageNames struct {
 }
 
 type UserDataPost struct {
-	Uname string    `json:"uname"`
-	Pwd   string    `json:"pwd"`
-	Data  DataField `json:"data"`
+	Uname string      `json:"uname"`
+	Pwd   string      `json:"pwd"`
+	Data  []DataField `json:"data"`
 }
 
 type DataField struct {
-	X []float64 `json:"x"`
-	Y []float64 `json:"y"`
-	Z []float64 `json:"z"`
+	X string `json:"X"`
+	Y string `json:"Y"`
+	Z string `json:"Z"`
 }
 
 func DisplayDashboard(w http.ResponseWriter, r *http.Request) {
@@ -67,36 +68,42 @@ func DisplayDashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func SendUserData(w http.ResponseWriter, r *http.Request) {
-	if !loadedCreds {
-		initCredentials()
-		loadedCreds = true
-	} else {
-		saveCredentials()
-	}
-
-	err := r.ParseForm()
+	var data UserDataPost
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&data)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		panic(err)
 	}
 
-	uname := r.PostForm.Get("uname")
-	pwd := r.PostForm.Get("pwd")
-	fmt.Println(uname, pwd)
-
-	pwdCred, ok := credentials[uname]
-	if ok && pwd == pwdCred {
-		_, err := os.Stat("data/" + uname)
+	pwdCred, ok := credentials[data.Uname]
+	if ok && data.Pwd == pwdCred {
+		_, err := os.Stat("data/" + data.Uname)
 		if os.IsNotExist(err) {
-			err = os.Mkdir("data/"+uname, 0755)
+			err = os.MkdirAll("data/"+data.Uname, 0755)
 		}
+
 		if err == nil {
-			var data UserDataPost
-			decoder := json.NewDecoder(r.Body)
-			err := decoder.Decode(&data)
+			csvf, err := os.Create("data/" + data.Uname + "/" +
+				time.Now().Format(time.RFC3339) + ".csv")
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println(data)
+			defer csvf.Close()
+
+			writer := csv.NewWriter(csvf)
+			for _, xyz := range data.Data {
+				var row []string
+				row = append(row, xyz.X)
+				row = append(row, xyz.Y)
+				row = append(row, xyz.Z)
+				err = writer.Write(row)
+				if err != nil {
+					panic(err)
+				}
+			}
+			writer.Flush()
+		} else {
+			panic(err)
 		}
 	}
 }

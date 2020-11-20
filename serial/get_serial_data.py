@@ -15,6 +15,7 @@ class DataReader():
         self._running = True
         self.filename = filename
         self.serial = serial
+        self.line = 1
         with open(filename, "w") as f:
             f.write("X,Y,Z\n")
 
@@ -30,17 +31,15 @@ class DataReader():
                 x = float(x_bit)
                 y = float(y_bit)
                 z = float(z_bit)
-                data = [x,y,z]
                 with open(self.filename, "a") as f:
-                    f.write("{},{},{}\n".format(data[0], data[1], data[2]))
+                    f.write("{},{},{}\n".format(x,y,z))
+                self.line += 1
             self.serial.flushInput()
 
 def main():
     port = FindSerial.serial_ports()[0]
 
-    ser = serial.Serial(
-        port=port,
-        baudrate=115200)
+    ser = serial.Serial(port=port,baudrate=115200)
 
     filename ="data/accel_data_running.csv"
 
@@ -56,7 +55,7 @@ def main():
     window = sg.Window('Strain Sense', layout)
 
     if '-local' in sys.argv:
-        req_url = r'https://localhost:32321/wearables/dashboard'
+        req_url = r'http://localhost:32321/wearables/dashboard'
     else:
         req_url = r'https://ethanvogelsang.com/wearables/dashboard'
 

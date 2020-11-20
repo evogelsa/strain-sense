@@ -1,9 +1,11 @@
 # serial
 serial/data/
+serial/secret.py
 
 # server
 server/creds
 server/dump.rdb
+server/data
 
 ##################################
 # Default python gitignore below #

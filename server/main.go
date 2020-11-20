@@ -64,13 +64,15 @@ func newRouter() *mux.Router {
 	router.HandleFunc(ROOT+"/create", routes.DisplayCreate).Methods("GET")
 	router.HandleFunc(ROOT+"/create", routes.CreateAccount).Methods("POST")
 	router.HandleFunc(ROOT+"/dashboard", routes.DisplayDashboard).Methods("GET")
-	//router.HandleFunc(ROOT+"/dashboardsend", routes.SendUserData).Methods("POST")
+	router.HandleFunc(ROOT+"/dashboard", routes.SendUserData).Methods("POST")
 
 	return router
 }
 
 func main() {
 	initCache()
+	routes.InitCredentials()
+
 	router := newRouter()
 	log.Fatal(http.ListenAndServe(
 		PORT,

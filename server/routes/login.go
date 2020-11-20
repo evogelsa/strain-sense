@@ -15,14 +15,13 @@ import (
 
 // credentials is map from [user] to pwd
 var credentials map[string]string
-var loadedCreds bool
 var Cache redis.Conn
 
 type loginTemplate struct {
 	Date string
 }
 
-func initCredentials() {
+func InitCredentials() {
 	_, err := os.Stat("creds")
 	if err == nil {
 		// exists
@@ -61,13 +60,6 @@ func saveCredentials() {
 }
 
 func AuthenticateLogin(w http.ResponseWriter, r *http.Request) {
-	if !loadedCreds {
-		initCredentials()
-		loadedCreds = true
-	} else {
-		saveCredentials()
-	}
-
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -91,8 +83,10 @@ func AuthenticateLogin(w http.ResponseWriter, r *http.Request) {
 			Expires: time.Now().Add(time.Hour),
 		})
 
+		fmt.Println("GOOD:", uname, pwd, pwdCred, ok)
 		http.Redirect(w, r, "/wearables/dashboard", http.StatusSeeOther)
 	} else {
+		fmt.Println("BAD:", uname, pwd, pwdCred, ok)
 		DisplayLogin(w, r)
 	}
 }

@@ -12,13 +12,6 @@ type createTemplate struct {
 }
 
 func CreateAccount(w http.ResponseWriter, r *http.Request) {
-	if !loadedCreds {
-		initCredentials()
-		loadedCreds = true
-	} else {
-		saveCredentials()
-	}
-
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -47,6 +40,8 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if !exist && pwd1 == pwd2 {
 		credentials[uname] = pwd1
+		saveCredentials()
+		fmt.Println("CREATED:", uname, pwd1, pwd2)
 		tmpl := template.Must(template.ParseFiles(
 			TEMPLATES + "user_created.html",
 		))
