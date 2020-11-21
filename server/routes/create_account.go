@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -41,10 +42,16 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	} else if !exist && pwd1 == pwd2 {
 		credentials[uname] = pwd1
 		saveCredentials()
+
+		err := os.MkdirAll("data/"+uname+"/", 0755)
+		if err != nil {
+			panic(err)
+		}
+
 		tmpl := template.Must(template.ParseFiles(
 			TEMPLATES + "user_created.html",
 		))
-		err := tmpl.Execute(w, nil)
+		err = tmpl.Execute(w, nil)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
