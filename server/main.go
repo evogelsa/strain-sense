@@ -40,6 +40,7 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	return f, nil
 }
 
+// initCache creates a connections to the redis server to store cookies
 func initCache() {
 	conn, err := redis.DialURL("redis://localhost")
 	if err != nil {
@@ -70,14 +71,19 @@ func newRouter() *mux.Router {
 }
 
 func main() {
+	// initialize the cache connection
 	initCache()
+	// load in the credential files or create one if non existant
 	routes.InitCredentials()
 
+	// make local router for testing
 	router := newRouter()
 	log.Fatal(http.ListenAndServe(
 		PORT,
 		router,
 	))
+
+	// make https router for server
 	// log.Fatal(http.ListenAndServeTLS(
 	//     PORT,
 	//     "/etc/letsencrypt/live/ethanvogelsang.xyz/cert.pem",
