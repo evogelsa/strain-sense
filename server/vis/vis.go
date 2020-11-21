@@ -71,18 +71,24 @@ func LineChart(filename string, w io.Writer) error {
 	line := charts.NewLine()
 
 	line.SetGlobalOptions(
-		charts.WithInitializationOpts(
-			opts.Initialization{Theme: types.ThemePurplePassion},
-		),
+		charts.WithInitializationOpts(opts.Initialization{
+			Theme: types.ThemePurplePassion,
+		}),
 		charts.WithTitleOpts(opts.Title{
 			Title: filename,
+		}),
+		charts.WithLegendOpts(opts.Legend{
+			Show: true,
+			Left: "10%",
+			Top:  "5%",
 		}),
 	)
 
 	line.SetXAxis(data.N).
-		AddSeries("X Acceleration", data.X).
-		AddSeries("X Acceleration", data.Y).
-		AddSeries("X Acceleration", data.Z)
+		AddSeries("X Acceleration", data.X). // #9B8BBA
+		AddSeries("Y Acceleration", data.Y). // #E098C7
+		AddSeries("Z Acceleration", data.Z)  // #8FD3E8
+		// #71669E
 
 	err = line.Render(w)
 	if err != nil {
