@@ -36,8 +36,10 @@ func DisplayDashboard(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_token")
 	if err == http.ErrNoCookie {
 		w.WriteHeader(http.StatusUnauthorized)
+		http.Redirect(w, r, "/wearables/login", http.StatusSeeOther)
 	} else if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, "/wearables/login", http.StatusSeeOther)
 	}
 	sessionToken := cookie.Value
 	resp, err := Cache.Do("GET", sessionToken)
@@ -46,6 +48,7 @@ func DisplayDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 	if resp == nil {
 		w.WriteHeader(http.StatusUnauthorized)
+		http.Redirect(w, r, "/wearables/login", http.StatusSeeOther)
 	}
 
 	t := time.Now()
