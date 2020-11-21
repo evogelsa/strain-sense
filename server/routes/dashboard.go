@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -8,16 +9,15 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
+
+	"github.iu.edu/evogelsa/strain-sense/vis"
 )
 
 type dashboardTemplate struct {
 	Date string
 	User string
-	Imgs []imageNames
-}
-
-type imageNames struct {
-	Name string
 }
 
 type UserDataPost struct {
@@ -54,17 +54,53 @@ func DisplayDashboard(w http.ResponseWriter, r *http.Request) {
 	data := dashboardTemplate{
 		Date: date,
 		User: fmt.Sprintf("Welcome %s", resp),
-		Imgs: []imageNames{
-			{Name: "red.png"},
-			{Name: "green.png"},
-		},
 	}
 
 	tmpl := template.Must(template.ParseFiles(TEMPLATES + "dashboard.html"))
-	err = tmpl.Execute(w, data)
+
+	var file bytes.Buffer
+	err = tmpl.Execute(&file, data)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+
+	dirname := fmt.Sprintf("data/%s/", resp)
+	dir, err := os.Open(dirname)
+	if err != nil {
+		panic(err)
+	}
+	defer dir.Close()
+
+	filenames, err := dir.Readdirnames(0)
+	if err != nil {
+		panic(err)
+	}
+
+	var bodies []string
+
+	for _, filename := range filenames {
+		var buf bytes.Buffer
+		err = vis.LineChart(dirname+string(filename), &buf)
+		if err != nil {
+			panic(err)
+		}
+
+		doc, err := goquery.NewDocumentFromReader(&buf)
+		if err != nil {
+			panic(err)
+		}
+
+		doc.Find("body").Each(func(i int, s *goquery.Selection) {
+			body, _ := s.Html()
+			bodies = append(bodies, `<div>`+body+`</div><br>`)
+		})
+	}
+
+	for _, body := range bodies {
+		file.WriteString(body)
+	}
+
+	fmt.Fprint(w, file.String())
 }
 
 func SendUserData(w http.ResponseWriter, r *http.Request) {
@@ -82,9 +118,11 @@ func SendUserData(w http.ResponseWriter, r *http.Request) {
 			err = os.MkdirAll("data/"+data.Uname, 0755)
 		}
 
+		var filename string
 		if err == nil {
-			csvf, err := os.Create("data/" + data.Uname + "/" +
-				time.Now().Format(time.RFC3339) + ".csv")
+			filename = "data/" + data.Uname + "/" +
+				time.Now().Format(time.RFC3339) + ".csv"
+			csvf, err := os.Create(filename)
 			if err != nil {
 				panic(err)
 			}
