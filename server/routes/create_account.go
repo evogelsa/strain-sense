@@ -59,6 +59,12 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
+		// create file to log lbp
+		f, err := os.Create("data/" + uname + "/LBP_log.csv")
+		if err != nil {
+			panic(err)
+		}
+		f.Close()
 
 		// display success message
 		tmpl := template.Must(template.ParseFiles(

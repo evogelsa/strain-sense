@@ -8,6 +8,8 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -103,12 +105,39 @@ func DisplayDashboard(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	sort.Sort(sort.Reverse(sort.StringSlice(filenames)))
 
 	// create a slice which will hold the html and js for the charts
 	var bodies []string
 
+	// vis lbp log first
+	var buf bytes.Buffer
+	logname := fmt.Sprintf(
+		"%s%d-%d_%s",
+		dirname,
+		t.Year(),
+		t.Month(),
+		"LBP_log.csv",
+	)
+	err = vis.LBPChart(logname, &buf)
+	if err != nil {
+		panic(err)
+	}
+	doc, err := goquery.NewDocumentFromReader(&buf)
+	if err != nil {
+		panic(err)
+	}
+	doc.Find("body").Each(func(i int, s *goquery.Selection) {
+		body, _ := s.Html()
+		bodies = append(bodies, body)
+	})
+
 	// for each file name in the data directory
 	for _, filename := range filenames {
+		// skip lbp logs
+		if strings.Contains(filename, "LBP_log") {
+			continue
+		}
 		// create a new byte buffer
 		var buf bytes.Buffer
 		// and read the data from the file and generate a line chart with
@@ -130,7 +159,7 @@ func DisplayDashboard(w http.ResponseWriter, r *http.Request) {
 		// slice made earlier
 		doc.Find("body").Each(func(i int, s *goquery.Selection) {
 			body, _ := s.Html()
-			bodies = append(bodies, `<div>`+body+`</div><br>`)
+			bodies = append(bodies, body)
 		})
 	}
 
@@ -161,44 +190,97 @@ func SendUserData(w http.ResponseWriter, r *http.Request) {
 	// and password is correct
 	pwdCred, ok := credentials[data.Uname]
 	if ok && data.Pwd == pwdCred {
-		// if uname and pwd valid then check for user data directory, if not
-		// exist then create it
-		_, err := os.Stat("data/" + data.Uname)
-		if os.IsNotExist(err) {
-			err = os.MkdirAll("data/"+data.Uname, 0755)
-		}
-
 		// data is saved as file in the user data directory with the filename
 		// set to the datetime it was received in ISO8601 standard
-		if err == nil {
-			// set filename to user data directory plus iso8601 time
-			filename := "data/" + data.Uname + "/" +
-				time.Now().Format(time.RFC3339) + ".csv"
+		// set filename to user data directory plus iso8601 time
+		filename := "data/" + data.Uname + "/" +
+			time.Now().Format(time.RFC3339) + ".csv"
 
-			// create the file
-			csvf, err := os.Create(filename)
+		// create the file
+		csvf, err := os.Create(filename)
+		if err != nil {
+			panic(err)
+		}
+		defer csvf.Close()
+
+		// make a new writer and decode the UserDataPost struct into a csv
+		// format and write to file
+		writer := csv.NewWriter(csvf)
+		for _, xyz := range data.Data {
+			var row []string
+			row = append(row, xyz.X)
+			row = append(row, xyz.Y)
+			row = append(row, xyz.Z)
+			err = writer.Write(row)
 			if err != nil {
 				panic(err)
 			}
-			defer csvf.Close()
-
-			// make a new writer and decode the UserDataPost struct into a csv
-			// format and write to file
-			writer := csv.NewWriter(csvf)
-			for _, xyz := range data.Data {
-				var row []string
-				row = append(row, xyz.X)
-				row = append(row, xyz.Y)
-				row = append(row, xyz.Z)
-				err = writer.Write(row)
-				if err != nil {
-					panic(err)
-				}
-			}
-			// flush the writer when done
-			writer.Flush()
-		} else {
-			panic(err)
 		}
+		// flush the writer when done
+		writer.Flush()
 	}
+}
+
+func LBPLog(w http.ResponseWriter, r *http.Request) {
+	// retrieve session cookie and check for existance
+	cookie, err := r.Cookie("session_token")
+	if err == http.ErrNoCookie {
+		// if no cookie user not authorized, redirect to login
+		w.WriteHeader(http.StatusUnauthorized)
+		http.Redirect(w, r, "/wearables/login", http.StatusSeeOther)
+	} else if err != nil {
+		// if other error bad request and redirect to login
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, "/wearables/login", http.StatusSeeOther)
+	}
+
+	// if cookie valid get session token from the cookie
+	sessionToken := cookie.Value
+	// resp will be the username from the cookie
+	resp, err := Cache.Do("GET", sessionToken)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	if resp == nil {
+		// if resp is nil then user not authorized, redirect to login
+		w.WriteHeader(http.StatusUnauthorized)
+		http.Redirect(w, r, "/wearables/login", http.StatusSeeOther)
+	}
+
+	uname := fmt.Sprintf("%s", resp)
+
+	t := time.Now()
+	dirname := "data/" + uname + "/"
+	logname := fmt.Sprintf(
+		"%s%d-%d_%s",
+		dirname,
+		t.Year(),
+		t.Month(),
+		"LBP_log.csv",
+	)
+	f, err := os.OpenFile(
+		logname,
+		os.O_APPEND|os.O_WRONLY|os.O_CREATE,
+		0644,
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	rating := r.PostForm.Get("rating")
+	date := time.Now().Format(time.RFC3339)
+
+	var line string = date + "," + rating + "\n"
+	_, err = f.WriteString(line)
+	if err != nil {
+		panic(err)
+	}
+
+	http.Redirect(w, r, "/wearables/dashboard", http.StatusSeeOther)
 }

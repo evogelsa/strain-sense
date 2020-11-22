@@ -66,6 +66,7 @@ func newRouter() *mux.Router {
 	router.HandleFunc(ROOT+"/create", routes.CreateAccount).Methods("POST")
 	router.HandleFunc(ROOT+"/dashboard", routes.DisplayDashboard).Methods("GET")
 	router.HandleFunc(ROOT+"/dashboard", routes.SendUserData).Methods("POST")
+	router.HandleFunc(ROOT+"/dashboard/log", routes.LBPLog).Methods("POST")
 
 	return router
 }
