@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
@@ -89,6 +90,13 @@ func LineChart(filename string, w io.Writer) error {
 	// create a new line chart
 	line := charts.NewLine()
 
+	fnsplit := strings.Split(filename, "/")[2]
+	dateTimeSplit := strings.Split(fnsplit, "T")
+	datestring := dateTimeSplit[0]
+	timestring := dateTimeSplit[1]
+	timestring = strings.Split(timestring, ".")[0]
+	timestring = strings.Split(timestring, "-")[0] + " UTC"
+
 	line.SetGlobalOptions(
 		// set line chart to desired theme
 		charts.WithInitializationOpts(opts.Initialization{
@@ -96,7 +104,7 @@ func LineChart(filename string, w io.Writer) error {
 		}),
 		// set the title of the chart
 		charts.WithTitleOpts(opts.Title{
-			Title: filename,
+			Title: fmt.Sprintf("Sensor Data for %s %s", datestring, timestring),
 		}),
 		// add a legend just above the chart axes
 		charts.WithLegendOpts(opts.Legend{
@@ -338,6 +346,9 @@ func LBPChart(filename string, w io.Writer) error {
 		"Saturday",
 	}
 
+	// get current month for chart title
+	month := time.Now().Month().String()
+
 	hm := charts.NewHeatMap()
 	hm.SetGlobalOptions(
 		// set color theme
@@ -346,7 +357,7 @@ func LBPChart(filename string, w io.Writer) error {
 		}),
 		// add title
 		charts.WithTitleOpts(opts.Title{
-			Title: "Lower Back Pain for MONTH",
+			Title: "Lower Back Pain for " + month,
 		}),
 		// add x axis labels
 		charts.WithXAxisOpts(opts.XAxis{
