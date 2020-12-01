@@ -95,7 +95,7 @@ func LineChart(filename string, w io.Writer) error {
 	datestring := dateTimeSplit[0]
 	timestring := dateTimeSplit[1]
 	timestring = strings.Split(timestring, ".")[0]
-	timestring = strings.Split(timestring, "-")[0] + " UTC"
+	timestring = strings.Split(timestring, "-")[0]
 
 	line.SetGlobalOptions(
 		// set line chart to desired theme
