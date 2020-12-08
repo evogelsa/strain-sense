@@ -29,55 +29,33 @@ void loop() {
         arcada.accel->getEvent(&event);
 
         // clear a spot on screen
-        arcada.display->fillRect(0, 0, 160, 8, ARCADA_BLACK);
+        arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK);
 
-        // display the x accel data
+        float xsq = sq(event.acceleration.x);
+        float ysq = sq(event.acceleration.y);
+        float zsq = sq(event.acceleration.z);
+        float accelMag = sqrt(xsq + ysq + zsq);
+
+        // display the accel data
         arcada.display->setCursor(0, 0);
-        char x[9];
-        sprintf(x, "X: %4.1f", event.acceleration.x);
-        arcada.display->print(x);
-        //arcada.display->print(event.acceleration.x, 1);
-
-        // display the y accel data
-        arcada.display->setCursor(50, 0);
-        char y[9];
-        sprintf(y, "Y: %4.1f", event.acceleration.y);
-        arcada.display->print(y);
-        //arcada.display->print(event.acceleration.y, 1);
-
-        // display the z accel data
-        arcada.display->setCursor(100, 0);
-        char z[9];
-        sprintf(z, "Z: %4.1f", event.acceleration.z);
-        arcada.display->print(z);
-        //arcada.display->print(event.acceleration.z, 1);
+        char a[10];
+        sprintf(a, "Z: %8.1f", accelMag);
+        arcada.display->print(a);
 
         // print the accelerometer data to serial plotter
-        /* Serial.print("\tX:"); */
-        /* Serial.print(event.acceleration.x); */
-        /*  */
-        /* Serial.print("\tY:"); */
-        /* Serial.print(event.acceleration.y); */
-        /*  */
-        /* Serial.print("\tZ:"); */
-        /* Serial.println(event.acceleration.z); */
-        Serial.print(event.acceleration.x);
-        Serial.print(",");
-        Serial.print(event.acceleration.y);
-        Serial.print(",");
-        Serial.print(event.acceleration.z);
+        Serial.print(a);
         Serial.print(",");
     }
 
     // measure resistance from flex sensor voltage divider
     int adc = analogRead(FLEX_PIN);
     float voltage = adc * VCC / 1023.0;
-    float resistance = DIV_R * (VCC / v - 1.0);
+    float resistance = DIV_R * (VCC / voltage - 1.0);
 
     // show resistance on pybadge
     arcada.display->setCursor(0, 16);
-    char r[9];
-    sprintf(r, "R: %4.1f", resistance);
+    char r[10];
+    sprintf(r, "R: %6.0f", resistance);
     arcada.display->print(r);
 
     // output resistance to serial
