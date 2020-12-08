@@ -17,7 +17,7 @@ class DataReader():
         self.serial = serial
         self.line = 1
         with open(filename, "w") as f:
-            f.write("X,Y,Z,R\n")
+            f.write("A,R\n")
 
     def stop(self):
         self._running = False
@@ -27,13 +27,11 @@ class DataReader():
             line = self.serial.readline().decode()[:-1]
             if line != "":
                 print(line)
-                x_bit, y_bit, z_bit, r_bit = line.split(",")
-                x = float(x_bit)
-                y = float(y_bit)
-                z = float(z_bit)
+                a_bit, r_bit = line.split(",")
+                a = float(a_bit)
                 r = float(r_bit)
                 with open(self.filename, "a") as f:
-                    f.write("{},{},{},{}\n".format(x,y,z,r))
+                    f.write("{},{}\n".format(a,r))
                 self.line += 1
             self.serial.flushInput()
 
