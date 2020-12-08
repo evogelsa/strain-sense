@@ -108,8 +108,8 @@ func LineChart(filename string, w io.Writer) error {
 
 	// add x, y, and z data to chart series
 	line.SetXAxis(data.N).
-		AddSeries("Acceleration", data.A).
-		AddSeries("R Acceleration", data.R)
+		AddSeries("Acceleration Magnitude", data.A).
+		AddSeries("Flex Resistance", data.R)
 
 	// write the chart to the end of the give io writer
 	err = line.Render(w)
