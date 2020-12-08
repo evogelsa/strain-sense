@@ -7,6 +7,9 @@ server/creds
 server/dump.rdb
 server/data
 
+# pybadge
+pybadge/ex_code
+
 ##################################
 # Default python gitignore below #
 ##################################

@@ -38,6 +38,7 @@ type DataField struct {
 	X string `json:"X"`
 	Y string `json:"Y"`
 	Z string `json:"Z"`
+	R string `json:"R"`
 }
 
 // DisplayDashboard shows the dashboard webpage and validates the user
@@ -206,11 +207,12 @@ func SendUserData(w http.ResponseWriter, r *http.Request) {
 		// make a new writer and decode the UserDataPost struct into a csv
 		// format and write to file
 		writer := csv.NewWriter(csvf)
-		for _, xyz := range data.Data {
+		for _, xyzr := range data.Data {
 			var row []string
-			row = append(row, xyz.X)
-			row = append(row, xyz.Y)
-			row = append(row, xyz.Z)
+			row = append(row, xyzr.X)
+			row = append(row, xyzr.Y)
+			row = append(row, xyzr.Z)
+			row = append(row, xyzr.R)
 			err = writer.Write(row)
 			if err != nil {
 				panic(err)

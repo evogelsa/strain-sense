@@ -2,6 +2,10 @@
 
 Adafruit_Arcada arcada;
 
+const int FLEX_PIN = A0;
+const float VCC = 4.16; // measure vcc for best accuracy
+const float DIV_R = 47000; // measure divider resistance for best accuracy
+
 void setup() {
     // initialize serial connection
     Serial.begin(9600);
@@ -62,7 +66,22 @@ void loop() {
         Serial.print(event.acceleration.y);
         Serial.print(",");
         Serial.print(event.acceleration.z);
-        Serial.print("\n");
+        Serial.print(",");
     }
+
+    // measure resistance from flex sensor voltage divider
+    int adc = analogRead(FLEX_PIN);
+    float voltage = adc * VCC / 1023.0;
+    float resistance = DIV_R * (VCC / v - 1.0);
+
+    // show resistance on pybadge
+    arcada.display->setCursor(0, 16);
+    char r[9];
+    sprintf(r, "R: %4.1f", resistance);
+    arcada.display->print(r);
+
+    // output resistance to serial
+    Serial.print(resistance);
+    Serial.print("\n");
     delay(25);
 }
