@@ -43,7 +43,7 @@ void loop() {
         arcada.display->print(a);
 
         // print the accelerometer data to serial plotter
-        Serial.print(a);
+        Serial.print(accelMag);
         Serial.print(",");
     }
 
