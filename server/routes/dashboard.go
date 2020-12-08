@@ -35,9 +35,7 @@ type UserDataPost struct {
 // DataField is used inside UserDataPost and stores the actual sensor data from
 // the post request
 type DataField struct {
-	X string `json:"X"`
-	Y string `json:"Y"`
-	Z string `json:"Z"`
+	A string `json:"A"`
 	R string `json:"R"`
 }
 
@@ -207,12 +205,10 @@ func SendUserData(w http.ResponseWriter, r *http.Request) {
 		// make a new writer and decode the UserDataPost struct into a csv
 		// format and write to file
 		writer := csv.NewWriter(csvf)
-		for _, xyzr := range data.Data {
+		for _, ar := range data.Data {
 			var row []string
-			row = append(row, xyzr.X)
-			row = append(row, xyzr.Y)
-			row = append(row, xyzr.Z)
-			row = append(row, xyzr.R)
+			row = append(row, ar.A)
+			row = append(row, ar.R)
 			err = writer.Write(row)
 			if err != nil {
 				panic(err)

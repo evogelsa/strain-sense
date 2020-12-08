@@ -17,9 +17,7 @@ import (
 // chartData is a struct to hold sensor data for line plots
 type chartData struct {
 	N []int
-	X []opts.LineData
-	Y []opts.LineData
-	Z []opts.LineData
+	A []opts.LineData
 	R []opts.LineData
 }
 
@@ -49,34 +47,20 @@ func readCSV(filename string) (*chartData, error) {
 			return nil, err
 		}
 
-		// parse x values in to struct
-		x, err := strconv.ParseFloat(record[0], 64)
-		if err != nil {
-			continue
-		}
-
-		// parse y value
-		y, err := strconv.ParseFloat(record[1], 64)
-		if err != nil {
-			continue
-		}
-
-		// parse z value
-		z, err := strconv.ParseFloat(record[2], 64)
+		// parse accel values in to struct
+		a, err := strconv.ParseFloat(record[0], 64)
 		if err != nil {
 			continue
 		}
 
 		// parse r value
-		r, err := strconv.ParseFloat(record[3], 64)
+		r, err := strconv.ParseFloat(record[1], 64)
 		if err != nil {
 			continue
 		}
 
 		// append parsed values to data struct
-		data.X = append(data.X, opts.LineData{Value: x})
-		data.Y = append(data.Y, opts.LineData{Value: y})
-		data.Z = append(data.Z, opts.LineData{Value: z})
+		data.A = append(data.A, opts.LineData{Value: a})
 		data.R = append(data.R, opts.LineData{Value: r})
 		// add to a slice containing number entries
 		data.N = append(data.N, n)
@@ -124,11 +108,8 @@ func LineChart(filename string, w io.Writer) error {
 
 	// add x, y, and z data to chart series
 	line.SetXAxis(data.N).
-		AddSeries("X Acceleration", data.X). // #9B8BBA
-		AddSeries("Y Acceleration", data.Y). // #E098C7
-		AddSeries("Z Acceleration", data.Z). // #8FD3E8
-		AddSeries("R Acceleration", data.R)  // #8FD3E8
-	// #71669E
+		AddSeries("Acceleration", data.A).
+		AddSeries("R Acceleration", data.R)
 
 	// write the chart to the end of the give io writer
 	err = line.Render(w)
