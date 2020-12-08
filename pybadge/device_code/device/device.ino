@@ -4,6 +4,7 @@
 #define win_len 15
 #define move_time_min 1 // 30
 Adafruit_Arcada arcada;
+#include <Filters.h>
 elapsedMillis t;
 
 
@@ -11,6 +12,20 @@ float run_x[win_len];
 float run_y[win_len];
 float run_z[win_len];
 float run_mag[win_len];
+
+float hp_freq = 3;// Hz
+float hp_len = 20;
+FilterOnePole hp_x(HIGHPASS, hp_freq);
+FilterOnePole hp_y(HIGHPASS, hp_freq);
+FilterOnePole hp_z(HIGHPASS, hp_freq);
+
+
+float lp_freq = 0.1;// Hz
+float lp_len = 20;
+FilterOnePole lp_x(LOWPASS, lp_freq);
+FilterOnePole lp_y(LOWPASS, lp_freq);
+FilterOnePole lp_z(LOWPASS, lp_freq);
+
 
 float avg_list(float* list)
 {
@@ -134,6 +149,14 @@ void loop() {
         av_y = avg_list(run_y);
         av_z = avg_list(run_z);
         av_mag = avg_list(run_mag);
+
+        hp_x.input(av_x);//x_ac);
+        hp_y.input(av_y);//y_ac);
+        hp_z.input(av_z);//z_ac);
+
+        lp_x.input(x_ac);//av_x);//
+        lp_y.input(y_ac);
+        lp_z.input(z_ac);
         
         if (t > move_time_min * 60*1000)
         {
@@ -149,13 +172,27 @@ void loop() {
           //accumulate changes in acceleration?
         }
         
-        Serial.print(av_x);//event.acceleration.x);
+//        Serial.print(av_x);//event.acceleration.x);
+//        Serial.print(",");
+//        Serial.print(av_y);//event.acceleration.y);
+//        Serial.print(",");
+//        Serial.print(av_z);//event.acceleration.z);
+//        Serial.print(",");
+//        Serial.print(av_mag);
+
+        Serial.print(hp_x.output());
         Serial.print(",");
-        Serial.print(av_y);//event.acceleration.y);
+        Serial.print(hp_y.output());
         Serial.print(",");
-        Serial.print(av_z);//event.acceleration.z);
+        Serial.print(hp_z.output());
         Serial.print(",");
-        Serial.print(av_mag);
+
+        Serial.print(lp_x.output());
+        Serial.print(",");
+        Serial.print(lp_y.output());
+        Serial.print(",");
+        Serial.print(lp_z.output());
+//        Serial.print(",");
         
 //        Serial.print(",");
 //        Serial.print(event.acceleration.x);
