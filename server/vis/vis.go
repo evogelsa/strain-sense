@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -36,6 +37,8 @@ func readCSV(filename string) (*chartData, error) {
 	// create a new csv reader
 	reader := csv.NewReader(csvf)
 	var n int
+	var aVals []float64
+	var rVals []float64
 	for {
 		// read the current line of file
 		record, err := reader.Read()
@@ -59,12 +62,40 @@ func readCSV(filename string) (*chartData, error) {
 			continue
 		}
 
-		// append parsed values to data struct
-		data.A = append(data.A, opts.LineData{Value: a})
-		data.R = append(data.R, opts.LineData{Value: r})
+		// add values to array
+		aVals = append(aVals, a)
+		rVals = append(rVals, r)
 		// add to a slice containing number entries
 		data.N = append(data.N, n)
 		n++
+	}
+
+	// get max value in accel array
+	var maxA float64 = math.Inf(-1)
+	for _, v := range aVals {
+		if v > maxA {
+			maxA = v
+		}
+	}
+
+	// get max value in flex array
+	var maxR float64 = math.Inf(-1)
+	for _, v := range rVals {
+		if v > maxR {
+			maxR = v
+		}
+	}
+
+	// normalize accel and add to data
+	for i := range aVals {
+		aVals[i] /= maxA
+		data.A = append(data.A, opts.LineData{Value: aVals[i], Symbol: "none"})
+	}
+
+	// normalize flex and add to data
+	for i := range rVals {
+		rVals[i] /= maxR
+		data.R = append(data.R, opts.LineData{Value: rVals[i], Symbol: "none"})
 	}
 
 	return &data, nil
