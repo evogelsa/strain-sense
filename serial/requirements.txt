@@ -1,3 +1,4 @@
 opencv_python==4.4.0.46
-myutils==0.0.21
 numpy==1.19.4
+requests==2.25.0
+PySimpleGUI==4.32.1
