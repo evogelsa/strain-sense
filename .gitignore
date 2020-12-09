@@ -1,3 +1,5 @@
+dump.rdb
+
 # serial
 serial/data/
 serial/secret.py
