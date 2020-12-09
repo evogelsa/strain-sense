@@ -13,18 +13,16 @@ float run_y[win_len];
 float run_z[win_len];
 float run_mag[win_len];
 
-float hp_freq = 3;// Hz
-float hp_len = 20;
-FilterOnePole hp_x(HIGHPASS, hp_freq);
-FilterOnePole hp_y(HIGHPASS, hp_freq);
-FilterOnePole hp_z(HIGHPASS, hp_freq);
+float hp_freq = 8;// Hz
+float flex_hp_freq = 5;// Hz
+
+FilterOnePole hp_mag(HIGHPASS, hp_freq);
+FilterOnePole hp_flex(HIGHPASS, flex_hp_freq);
 
 
-float lp_freq = 0.1;// Hz
-float lp_len = 20;
-FilterOnePole lp_x(LOWPASS, lp_freq);
-FilterOnePole lp_y(LOWPASS, lp_freq);
-FilterOnePole lp_z(LOWPASS, lp_freq);
+float lp_freq = 1;// Hz
+
+FilterOnePole lp_flex(LOWPASS, lp_freq);
 
 
 float avg_list(float* list)
@@ -64,11 +62,19 @@ void timercallback()
   }
 }
 
+
+const float VCC = 4.21; // Measured voltage of Ardunio 5V line
+const float R_DIV = 47500.0; // Measured resistance of 3.3k resistor
+
+
+const float STRAIGHT_RESISTANCE = 37300.0; // resistance when straight
+const float BEND_RESISTANCE = 90000.0; // resistance at 90 deg
+
 void setup() {
     // initialize serial connection
     Serial.begin(9600);
     Serial.println("Serial initialized.");
-
+    pinMode(A0, INPUT);
     // init pybadge
     arcada.arcadaBegin();
 
@@ -78,8 +84,10 @@ void setup() {
         arcada.setBacklight(i);
         delay(1);
     }
-
-    arcada.timerCallback(1000, timercallback);
+    Serial.print("flex");
+    Serial.print(",");
+    Serial.println("accel");
+//    arcada.timerCallback(1000, timercallback);
 }
 
 int txt_y = 60;
@@ -93,6 +101,8 @@ float av_y = 0;
 float av_z = 0;
 float av_mag = 0;
 
+float flex_sig = 0;
+
 void loop() {
     if (arcada.hasAccel()) {
         // get pybadge events
@@ -102,6 +112,10 @@ void loop() {
         x_ac = event.acceleration.x;
         y_ac = event.acceleration.y;
         z_ac = event.acceleration.z;
+
+        flex_sig = (1023.0-analogRead(A0))/1023.0;
+//        flex_sig *= VCC;
+//        flex_sig = R_DIV * (VCC / flex_sig - 1.0);
 
         ac_mag = accel_mag(x_ac, y_ac, z_ac);
         
@@ -139,24 +153,29 @@ void loop() {
         /*  */
         /* Serial.print("\tZ:"); */
         /* Serial.println(event.acceleration.z); */
-        add_2_list(x_ac, run_x);
-        add_2_list(y_ac, run_y);
-        add_2_list(z_ac, run_z);
+//        add_2_list(x_ac, run_x);
+//        add_2_list(y_ac, run_y);
+//        add_2_list(z_ac, run_z);
         add_2_list(ac_mag, run_mag);
         
 
-        av_x = avg_list(run_x);
-        av_y = avg_list(run_y);
-        av_z = avg_list(run_z);
+//        av_x = avg_list(run_x);
+//        av_y = avg_list(run_y);
+//        av_z = avg_list(run_z);
         av_mag = avg_list(run_mag);
 
-        hp_x.input(av_x);//x_ac);
-        hp_y.input(av_y);//y_ac);
-        hp_z.input(av_z);//z_ac);
+//        hp_x.input(av_x);//x_ac);
+//        hp_y.input(av_y);//y_ac);
+//        hp_z.input(av_z);//z_ac);
 
-        lp_x.input(x_ac);//av_x);//
-        lp_y.input(y_ac);
-        lp_z.input(z_ac);
+
+        hp_mag.input(ac_mag);//z_ac);
+        lp_flex.input(flex_sig);
+        hp_flex.input(lp_flex.output()*25.0);
+
+//        lp_x.input(x_ac);//av_x);//
+//        lp_y.input(y_ac);
+//        lp_z.input(z_ac);
         
         if (t > move_time_min * 60*1000)
         {
@@ -179,19 +198,26 @@ void loop() {
 //        Serial.print(av_z);//event.acceleration.z);
 //        Serial.print(",");
 //        Serial.print(av_mag);
+  
+//          Serial.print(lp_flex.output());//flex_sig);
+//          Serial.print(",");
+          Serial.print(hp_flex.output());
+          Serial.print(",");
+          Serial.print(hp_mag.output());
+          
 
-        Serial.print(hp_x.output());
-        Serial.print(",");
-        Serial.print(hp_y.output());
-        Serial.print(",");
-        Serial.print(hp_z.output());
-        Serial.print(",");
+//        Serial.print(hp_x.output());
+//        Serial.print(",");
+//        Serial.print(hp_y.output());
+//        Serial.print(",");
+//        Serial.print(hp_z.output());
+//        Serial.print(",");
 
-        Serial.print(lp_x.output());
-        Serial.print(",");
-        Serial.print(lp_y.output());
-        Serial.print(",");
-        Serial.print(lp_z.output());
+//        Serial.print(lp_x.output());
+//        Serial.print(",");
+//        Serial.print(lp_y.output());
+//        Serial.print(",");
+//        Serial.print(lp_z.output());
 //        Serial.print(",");
         
 //        Serial.print(",");
