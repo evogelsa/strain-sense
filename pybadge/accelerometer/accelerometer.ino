@@ -90,8 +90,8 @@ void loop() {
     int adc = analogRead(FLEX_PIN);
     float voltage = adc * VCC / 1023.0;
     float resistance = DIV_R * (VCC / voltage - 1.0);
-    hp_flex.input(resistance);
-    resistance = hp_flex.output();
+    //hp_flex.input(resistance);
+    //resistance = hp_flex.output();
 
     // show resistance on pybadge
     arcada.display->setCursor(0, 16);
