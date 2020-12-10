@@ -2,13 +2,13 @@
 #include <elapsedMillis.h>
 #include <Filters.h>
 #include "audio.h"
-#define mvmnt_win_len 1000 //length of array for movement detection
-#define move_time 30 *60*1000 // time in ms to decide about notification
+#define mvmnt_win_len 20 //length of array for movement detection
+#define move_time 0.25 *60*1000 // time in ms to decide about notification
 //                30
 //#define DO_DISPLAY
 
 elapsedMillis t;
-const int beep_time = 12 * 1000; // beep every so and so seconds until movement
+const int beep_time = 5 * 1000; // beep every so and so seconds until movement
 elapsedMillis beep_t; //for beeping every beep
 
 
@@ -26,7 +26,7 @@ float accel_out;
 
 
 bool movement_detected = false;
-const float mvmnt_thresh = 0.3;
+const float mvmnt_thresh = 0.17; //value found below which the rolling average for acceleration indicates stillness
 bool standing_detected = false;
 const int standing_thresh = 22000;
 
@@ -57,6 +57,34 @@ void add_2_list(float value, float* list, int len)
   list[len-1] = value;
 }
 
+
+void update_accel()
+{
+  if (arcada.hasAccel()) {
+    // get pybadge events
+    sensors_event_t event;
+    arcada.accel->getEvent(&event);
+
+    float xsq = sq(event.acceleration.x);
+    float ysq = sq(event.acceleration.y);
+    float zsq = sq(event.acceleration.z);
+    float accelMag = sqrt(xsq + ysq + zsq);
+
+    hp_mag.input(accelMag);
+    lp_mag.input(hp_mag.output());//accelMag);
+    //*
+    accel_out = hp_mag.output();
+    /*/
+    accel_out = lp_mag.output();
+    
+    //*/
+    mvmnt_roll_sum += abs(accel_out) - mvmnt_detect_wndw[0];
+    add_2_list(abs(accel_out), mvmnt_detect_wndw, mvmnt_win_len); //add the filtered accel magnitude to the detection list
+    mvmnt_avg = mvmnt_roll_sum / mvmnt_win_len;
+  }
+}
+
+
 void setup() {
     // initialize serial connection
     Serial.begin(9600);
@@ -77,45 +105,41 @@ void setup() {
         delay(1);
     }
     #endif
+    arcada.timerCallback(10, update_accel);
 }
 
 void loop() {
-    if (arcada.hasAccel()) {
-        // get pybadge events
-        sensors_event_t event;
-        arcada.accel->getEvent(&event);
-
-        float xsq = sq(event.acceleration.x);
-        float ysq = sq(event.acceleration.y);
-        float zsq = sq(event.acceleration.z);
-        float accelMag = sqrt(xsq + ysq + zsq);
-
-        hp_mag.input(accelMag);
-        lp_mag.input(hp_mag.output());//accelMag);
-        /*
-        accel_out = hp_mag.output();
-        /*/
-        accel_out = lp_mag.output();
-        
-        //*/
-        mvmnt_roll_sum += abs(accel_out) - mvmnt_detect_wndw[0];
-        add_2_list(abs(accel_out), mvmnt_detect_wndw, mvmnt_win_len); //add the filtered accel magnitude to the detection list
-        mvmnt_avg = mvmnt_roll_sum / mvmnt_win_len;
-        
-        // display the accel data or dont to save resources
-        #ifdef DO_DISPLAY
-          arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK); // clear a spot on screen
-          arcada.display->setCursor(0, 0);
-          char a[10];
-          sprintf(a, "Z: %8.1f", accel_out);
-          arcada.display->print(a);
-        #endif
+//    if (arcada.hasAccel()) {
+//        // get pybadge events
+//        sensors_event_t event;
+//        arcada.accel->getEvent(&event);
+//
+//        float xsq = sq(event.acceleration.x);
+//        float ysq = sq(event.acceleration.y);
+//        float zsq = sq(event.acceleration.z);
+//        float accelMag = sqrt(xsq + ysq + zsq);
+//
+//        hp_mag.input(accelMag);
+//        lp_mag.input(hp_mag.output());//accelMag);
+//        /*
+//        accel_out = hp_mag.output();
+//        /*/
+//        accel_out = lp_mag.output();
+//        
+//        //*/
+//        mvmnt_roll_sum += abs(accel_out) - mvmnt_detect_wndw[0];
+//        add_2_list(abs(accel_out), mvmnt_detect_wndw, mvmnt_win_len); //add the filtered accel magnitude to the detection list
+//        mvmnt_avg = mvmnt_roll_sum / mvmnt_win_len;
+//    }
+    // display the accel data or dont to save resources
+    #ifdef DO_DISPLAY
+      arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK); // clear a spot on screen
+      arcada.display->setCursor(0, 0);
+      char a[10];
+      sprintf(a, "Z: %8.1f", accel_out);
+      arcada.display->print(a);
+    #endif
     
-
-        // print the accelerometer data to serial plotter
-        
-    }
-
     // measure resistance from flex sensor voltage divider
     int adc = analogRead(FLEX_PIN);
     float voltage = adc * VCC / 1023.0;
@@ -148,14 +172,14 @@ void loop() {
 
     // output data to serial
     Serial.print(accel_out);
-//    Serial.print(",");
-//    Serial.print(mvmnt_avg*10.0);
-//    Serial.print(",");
-//    Serial.print(standing_detected * 3);
-//    Serial.print(",");
-//    Serial.print(movement_detected * 4);
-//    Serial.print(",");
-//    Serial.print((movement_detected && standing_detected)* 5);
+    Serial.print(",");
+    Serial.print(mvmnt_avg*10000.0);
+    Serial.print(",");
+    Serial.print(standing_detected * 3 *1000);
+    Serial.print(",");
+    Serial.print(movement_detected * 4 *1000);
+    Serial.print(",");
+    Serial.print((movement_detected && standing_detected)* 5 *1000);
     Serial.print(",");
     Serial.print(resistance);
     Serial.print("\n");
