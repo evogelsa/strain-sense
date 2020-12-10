@@ -1,224 +1,169 @@
 #include <Adafruit_Arcada.h>
 #include <elapsedMillis.h>
 #include <Filters.h>
+#include <Filters/Butterworth.hpp>
+#include <AH/Timing/MillisMicrosTimer.hpp>
 #include "audio.h"
-#define mvmnt_win_len 20 //length of array for movement detection
-#define move_time 0.25 *60*1000 // time in ms to decide about notification
-//                30
+
 //#define DO_DISPLAY
 
-elapsedMillis t;
-const int beep_time = 5 * 1000; // beep every so and so seconds until movement
-elapsedMillis beep_t; //for beeping every beep
+// system configuration parameters
+const float FS = 100;                 // Sample rate, Hz
+const float LP_FC = 40;               // Cutoff frequency for low pass, Hz
+const float HP_FC = 240;              // Cutoff frequency for high pass, Hz
+const float LP_FN = 2 * LP_FC / FS;   // LP normalized freq
+const float HP_FN = 2 * HP_FC / FS;   // HP normalized freq
+const float MOVE_TIME = 0.25*60*1000; // time in ms to decide about notification
 
+elapsedMillis t;
+const int BEEP_TIME = 5 * 1000; // beep every so and so seconds until movement
+elapsedMillis beep_t;           // for beeping every beep
 
 Adafruit_Arcada arcada;
 
+// define pins and constants relating to flex sensor
 const int FLEX_PIN = A0;
-const float VCC = 4.16; // measure vcc for best accuracy
-const float DIV_R = 10000; // measure divider resistance for best accuracy
+const float VCC = 4.16;   // configure to vcc of your setup
+const float DIV_R = 10e3; // second resistor in voltage divider resistance
 
-float mvmnt_detect_wndw[mvmnt_win_len];
+// create window for running average, used for movement detection
+const int ACCEL_N_INPUTS = FS * 2; // FS * seconds of data desired
+float accelInputs[ACCEL_N_INPUTS];
+float accelSum = 0;
+unsigned int accelIdx = 0;
 
-float mvmnt_roll_sum = 0;
-float mvmnt_avg = 0;
-float accel_out;
+// define movement detection variables
+const float MOVE_THRESHOLD = 0.17; // below threshold means not moving
+const int STAND_THRESHOLD = 22000;
 
+// define timer to control sample rate
+Timer<micros> samplingTimer = std::round(1e6 / FS);
 
-bool movement_detected = false;
-const float mvmnt_thresh = 0.17; //value found below which the rolling average for acceleration indicates stillness
-bool standing_detected = false;
-const int standing_thresh = 22000;
+// define second order low pass butterworth filter
+auto lpFilter = butter<2>(LP_FN);
 
+void updateAccel(float *accelMag, float *accelAvg) {
+    if (arcada.hasAccel()) {
+        // get pybadge events
+        sensors_event_t event;
+        arcada.accel->getEvent(&event);
 
-const float hp_freq = 0.01;// hp frequency to filter
-FilterOnePole hp_mag(HIGHPASS, hp_freq);
+        // measure the squared acceleration of each axis
+        float xsq = sq(event.acceleration.x);
+        float ysq = sq(event.acceleration.y);
+        float zsq = sq(event.acceleration.z);
 
-const float lp_freq = 10;
-FilterOnePole lp_mag(LOWPASS, lp_freq);
+        // combine each direction into single magnitude
+        *accelMag = sqrt(xsq + ysq + zsq);
 
+        // filter acceleration magnitude through lowpass butterworth
+        *accelMag = lpFilter(*accelMag);
 
+        // add acceleration magnitude to rolling sum
+        accelSum += *accelMag;
 
-float avg_list(float* list, int len)
-{
-  float run_sum = 0;
-  for (int i = 0; i < len; i++)
-  {
-    run_sum += list[i];
-  }
-  return run_sum / len;
+        // check if we have reached the limit of values we want to average
+        // subtract the oldest input if we have
+        if (accelIdx >= ACCEL_N_INPUTS) {
+            accelSum -= accelInputs[accelIdx % ACCEL_N_INPUTS];
+        }
+
+        // track most recent input
+        accelInputs[accelIdx % ACCEL_N_INPUTS] = *accelMag;
+        accelIdx++;
+
+        // calculate the average
+        *accelAvg = accelSum / ACCEL_N_INPUTS;
+    }
 }
-void add_2_list(float value, float* list, int len)
-{
-  for (int i = 0; i < len - 1; i++)
-  {
-    list[i] = list[i+1];
-  }
-  list[len-1] = value;
-}
-
-
-void update_accel()
-{
-  if (arcada.hasAccel()) {
-    // get pybadge events
-    sensors_event_t event;
-    arcada.accel->getEvent(&event);
-
-    float xsq = sq(event.acceleration.x);
-    float ysq = sq(event.acceleration.y);
-    float zsq = sq(event.acceleration.z);
-    float accelMag = sqrt(xsq + ysq + zsq);
-
-    hp_mag.input(accelMag);
-    lp_mag.input(hp_mag.output());//accelMag);
-    //*
-    accel_out = hp_mag.output();
-    /*/
-    accel_out = lp_mag.output();
-    
-    //*/
-    mvmnt_roll_sum += abs(accel_out) - mvmnt_detect_wndw[0];
-    add_2_list(abs(accel_out), mvmnt_detect_wndw, mvmnt_win_len); //add the filtered accel magnitude to the detection list
-    mvmnt_avg = mvmnt_roll_sum / mvmnt_win_len;
-  }
-}
-
 
 void setup() {
     // initialize serial connection
     Serial.begin(9600);
-    for (int i = 0; i < mvmnt_win_len; i++)
-    {
-      mvmnt_detect_wndw[i] = 0;
-    }
 
     // init pybadge
     arcada.arcadaBegin();
 
-    
+#ifdef DO_DISPLAY
     // initialize pybadge display and turn on backlight
-    #ifdef DO_DISPLAY
-      arcada.displayBegin();
+    arcada.displayBegin();
     for (int i = 0; i <= 255; i++) {
         arcada.setBacklight(i);
         delay(1);
     }
-    #endif
-    arcada.timerCallback(10, update_accel);
+#endif
 }
 
 void loop() {
-//    if (arcada.hasAccel()) {
-//        // get pybadge events
-//        sensors_event_t event;
-//        arcada.accel->getEvent(&event);
-//
-//        float xsq = sq(event.acceleration.x);
-//        float ysq = sq(event.acceleration.y);
-//        float zsq = sq(event.acceleration.z);
-//        float accelMag = sqrt(xsq + ysq + zsq);
-//
-//        hp_mag.input(accelMag);
-//        lp_mag.input(hp_mag.output());//accelMag);
-//        /*
-//        accel_out = hp_mag.output();
-//        /*/
-//        accel_out = lp_mag.output();
-//        
-//        //*/
-//        mvmnt_roll_sum += abs(accel_out) - mvmnt_detect_wndw[0];
-//        add_2_list(abs(accel_out), mvmnt_detect_wndw, mvmnt_win_len); //add the filtered accel magnitude to the detection list
-//        mvmnt_avg = mvmnt_roll_sum / mvmnt_win_len;
-//    }
-    // display the accel data or dont to save resources
-    #ifdef DO_DISPLAY
-      arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK); // clear a spot on screen
-      arcada.display->setCursor(0, 0);
-      char a[10];
-      sprintf(a, "Z: %8.1f", accel_out);
-      arcada.display->print(a);
-    #endif
-    
-    // measure resistance from flex sensor voltage divider
-    int adc = analogRead(FLEX_PIN);
-    float voltage = adc * VCC / 1023.0;
-    float resistance = DIV_R * (VCC / voltage - 1.0);
-<<<<<<< HEAD
-    //hp_flex.input(resistance);
-    //resistance = hp_flex.output();
-=======
->>>>>>> 09d97136969c4891c618fa68a3efb4289181cf76
+    if (samplingTimer) {
+        float *accelMag, *accelAvg;
+        updateAccel(accelMag, accelAvg);
 
-    // show resistance on pybadge or dont to save resources
-    #ifdef DO_DISPLAY
-      arcada.display->setCursor(0, 16);
-      char r[10];
-      sprintf(r, "R: %6.0f", resistance);
-      arcada.display->print(r);
-    #endif
+        // measure resistance from flex sensor voltage divider
+        int adc = analogRead(FLEX_PIN);
+        float voltage = adc * VCC / 1023.0;
+        float resistance = DIV_R * (VCC / voltage - 1.0);
 
-    if (resistance < standing_thresh)
-    {
-      standing_detected = true;
-    }
-    else
-    {
-      standing_detected = false;
-    }
-    if (mvmnt_avg > mvmnt_thresh)
-    {
-      movement_detected = true;
-    }
-    else
-    {
-      movement_detected = false;
-    }
+        // determine if standing and movement has been detected
+        bool standingDetected = (resistance < STAND_THRESHOLD);
+        bool movementDetected = (*accelAvg > MOVE_THRESHOLD);
 
-    // output data to serial
-    Serial.print(accel_out);
-    Serial.print(",");
-    Serial.print(mvmnt_avg*10000.0);
-    Serial.print(",");
-    Serial.print(standing_detected * 3 *1000);
-    Serial.print(",");
-    Serial.print(movement_detected * 4 *1000);
-    Serial.print(",");
-    Serial.print((movement_detected && standing_detected)* 5 *1000);
-    Serial.print(",");
-    Serial.print(resistance);
-    Serial.print("\n");
-//    delay(25);
+        // output data to serial
+        Serial.print(*accelMag);
+        Serial.print(",");
+        Serial.print(*accelAvg);
+        Serial.print(",");
+        Serial.print(standingDetected * 3 *1000);
+        Serial.print(",");
+        Serial.print(movementDetected * 4 *1000);
+        Serial.print(",");
+        Serial.print((movementDetected && standingDetected)* 5 *1000);
+        Serial.print(",");
+        Serial.print(resistance);
+        Serial.print("\n");
 
-    if (movement_detected && standing_detected)
-    {
-      t = 0; // reset timer because user has moved
-    }
-    else
-    {
-      if (t > move_time) //user hasn't moved in enough time
-      {
-        if (beep_t > beep_time) // device hasn't beeped in a bit
-        {
-          beep_t = 0;
-          arcada.enableSpeaker(true);
-          play_tune(audio, sizeof(audio)); // beep device. discombobulates sensors, beware
-          arcada.enableSpeaker(false);
+        if (movementDetected && standingDetected) {
+            t = 0; // reset timer because user has moved
+        } else {
+            if (t > MOVE_TIME) //user hasn't moved recently enough
+            {
+                if (beep_t > BEEP_TIME) // device hasn't beeped in a bit
+                {
+                    // beep device, but causes sensor funkiness
+                    beep_t = 0;
+                    arcada.enableSpeaker(true);
+                    play_tune(audio, sizeof(audio));
+                    arcada.enableSpeaker(false);
+                }
+            }
         }
-      }
     }
 
+#ifdef DO_DISPLAY
+    // display the accel average
+    arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK); // clear a spot on screen
+    arcada.display->setCursor(0, 0);
+    char a[10];
+    sprintf(a, "Z: %8.1f", accelAvg);
+    arcada.display->print(a);
+
+    // show resistance on pybadge
+    arcada.display->setCursor(0, 16);
+    char r[10];
+    sprintf(r, "R: %6.0f", resistance);
+    arcada.display->print(r);
+#endif
 }
 
 
 void play_tune(const uint8_t *audio, uint32_t audio_length) {
-  uint32_t t;
-  uint32_t prior, usec = 1000000L / SAMPLE_RATE;
-  analogWriteResolution(8);
-  for (uint32_t i=0; i<audio_length; i++) {
-    while((t = micros()) - prior < usec);
-    analogWrite(A0, (uint16_t)audio[i] / 8);
-    analogWrite(A1, (uint16_t)audio[i] / 8);
-    prior = t;
-  }
+    uint32_t t;
+    uint32_t prior, usec = 1000000L / SAMPLE_RATE;
+    analogWriteResolution(8);
+    for (uint32_t i=0; i<audio_length; i++) {
+        while((t = micros()) - prior < usec);
+        analogWrite(A0, (uint16_t)audio[i] / 8);
+        analogWrite(A1, (uint16_t)audio[i] / 8);
+        prior = t;
+    }
 }
