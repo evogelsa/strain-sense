@@ -1,25 +1,20 @@
 #include <Adafruit_Arcada.h>
-#include <elapsedMillis.h>
 #include <Filters.h>
 #include <Filters/Butterworth.hpp>
-#include <AH/Timing/MillisMicrosTimer.hpp>
+#include <elapsedMillis.h>
 #include "audio.h"
 
-//#define DO_DISPLAY
-
-// system configuration parameters
-const float FS = 100;                 // Sample rate, Hz
-const float LP_FC = 40;               // Cutoff frequency for low pass, Hz
-const float HP_FC = 240;              // Cutoff frequency for high pass, Hz
-const float LP_FN = 2 * LP_FC / FS;   // LP normalized freq
-const float HP_FN = 2 * HP_FC / FS;   // HP normalized freq
-const float MOVE_TIME = 0.25*60*1000; // time in ms to decide about notification
-
-elapsedMillis t;
-const int BEEP_TIME = 5 * 1000; // beep every so and so seconds until movement
-elapsedMillis beep_t;           // for beeping every beep
+#define DO_DISPLAY
 
 Adafruit_Arcada arcada;
+
+// system configuration parameters
+const double FS = 100;                 // Sample rate, Hz
+const double LP_FC = 40;               // Cutoff frequency for low pass, Hz
+const double LP_FN = 2 * LP_FC / FS;   // LP normalized freq
+const float MOVE_TIME = 0.25*60*1000;  // time to decide about notification, ms
+const float BEEP_TIME = 5 * 1000;      // beep every 5 seconds until movement
+const float SAMPLE_TIME = 10 / FS;
 
 // define pins and constants relating to flex sensor
 const int FLEX_PIN = A0;
@@ -37,10 +32,24 @@ const float MOVE_THRESHOLD = 0.17; // below threshold means not moving
 const int STAND_THRESHOLD = 22000;
 
 // define timer to control sample rate
-Timer<micros> samplingTimer = std::round(1e6 / FS);
+elapsedMillis samplingTimer;
+elapsedMillis beepTimer;
+elapsedMillis moveTimer;
 
 // define second order low pass butterworth filter
 auto lpFilter = butter<2>(LP_FN);
+
+void playSound(const uint8_t *audio, uint32_t audio_length) {
+    uint32_t t;
+    uint32_t prior, usec = 1000000L / SAMPLE_RATE;
+    analogWriteResolution(8);
+    for (uint32_t i=0; i<audio_length; i++) {
+        while((t = micros()) - prior < usec);
+        analogWrite(A0, (uint16_t)audio[i] / 8);
+        analogWrite(A1, (uint16_t)audio[i] / 8);
+        prior = t;
+    }
+}
 
 void updateAccel(float *accelMag, float *accelAvg) {
     if (arcada.hasAccel()) {
@@ -95,7 +104,8 @@ void setup() {
 }
 
 void loop() {
-    if (samplingTimer) {
+    if (samplingTimer >= SAMPLE_TIME) {
+        samplingTimer -= SAMPLE_TIME;
         float *accelMag, *accelAvg;
         updateAccel(accelMag, accelAvg);
 
@@ -123,47 +133,29 @@ void loop() {
         Serial.print("\n");
 
         if (movementDetected && standingDetected) {
-            t = 0; // reset timer because user has moved
-        } else {
-            if (t > MOVE_TIME) //user hasn't moved recently enough
-            {
-                if (beep_t > BEEP_TIME) // device hasn't beeped in a bit
-                {
-                    // beep device, but causes sensor funkiness
-                    beep_t = 0;
-                    arcada.enableSpeaker(true);
-                    play_tune(audio, sizeof(audio));
-                    arcada.enableSpeaker(false);
-                }
-            }
+            moveTimer = 0;
+        } else if ((moveTimer >= MOVE_TIME) && (beepTimer >= BEEP_TIME)) {
+            // if user hasn't moved recently enough and device hasn't beeped
+            // recently then beep device, beware causes sensor funkiness
+            beepTimer -= BEEP_TIME;
+            arcada.enableSpeaker(true);
+            playSound(audio, sizeof(audio));
+            arcada.enableSpeaker(false);
         }
-    }
 
 #ifdef DO_DISPLAY
-    // display the accel average
-    arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK); // clear a spot on screen
-    arcada.display->setCursor(0, 0);
-    char a[10];
-    sprintf(a, "Z: %8.1f", accelAvg);
-    arcada.display->print(a);
+        // display the accel average
+        arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK); // clear screen
+        arcada.display->setCursor(0, 0);
+        char a[10];
+        sprintf(a, "Z: %8.1f", *accelAvg);
+        arcada.display->print(a);
 
-    // show resistance on pybadge
-    arcada.display->setCursor(0, 16);
-    char r[10];
-    sprintf(r, "R: %6.0f", resistance);
-    arcada.display->print(r);
+        // show resistance on pybadge
+        arcada.display->setCursor(0, 16);
+        char r[10];
+        sprintf(r, "R: %6.0f", resistance);
+        arcada.display->print(r);
 #endif
-}
-
-
-void play_tune(const uint8_t *audio, uint32_t audio_length) {
-    uint32_t t;
-    uint32_t prior, usec = 1000000L / SAMPLE_RATE;
-    analogWriteResolution(8);
-    for (uint32_t i=0; i<audio_length; i++) {
-        while((t = micros()) - prior < usec);
-        analogWrite(A0, (uint16_t)audio[i] / 8);
-        analogWrite(A1, (uint16_t)audio[i] / 8);
-        prior = t;
     }
 }
