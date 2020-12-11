@@ -1,5 +1,6 @@
 import sys
 import serial
+import os
 import io
 import time
 import FindSerial
@@ -36,6 +37,9 @@ class DataReader():
             self.serial.flushInput()
 
 def main():
+    if not os.path.isfile("data/"):
+        os.mkdir("data/")
+
     port = FindSerial.serial_ports()[0]
 
     ser = serial.Serial(port=port,baudrate=115200)
