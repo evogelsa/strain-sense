@@ -12,8 +12,8 @@ Adafruit_Arcada arcada;
 const double FS = 100;                 // Sample rate, Hz
 const double LP_FC = 20;               // Cutoff frequency for low pass, Hz
 const double LP_FN = 2 * LP_FC / FS;   // LP normalized freq
-const float MOVE_TIME = .25*60*1000;  // time to decide about notification, ms
-const float BEEP_TIME = 5 * 1000;      // beep every 5 seconds until movement
+const float MOVE_TIME = 30*60*1000;  // time to decide about notification, ms
+const float BEEP_TIME = 60 * 1000;      // beep every 5 seconds until movement
 const float SAMPLE_TIME = 10 / FS;
 
 // define pins and constants relating to flex sensor
@@ -123,14 +123,14 @@ void loop() {
         // output data to serial
         Serial.print(*accelMag);
         Serial.print(",");
-        Serial.print(*accelAvg);
-        Serial.print(",");
-        Serial.print(standingDetected * 3);
-        Serial.print(",");
-        Serial.print(movementDetected * 4);
-        Serial.print(",");
-        Serial.print((movementDetected && standingDetected)* 5 );
-        Serial.print(",");
+//        Serial.print(*accelAvg);
+//        Serial.print(",");
+//        Serial.print(standingDetected * 3);
+//        Serial.print(",");
+//        Serial.print(movementDetected * 4);
+//        Serial.print(",");
+//        Serial.print((movementDetected && standingDetected)* 5 );
+//        Serial.print(",");
         Serial.print(resistance);
         Serial.print("\n");
 
