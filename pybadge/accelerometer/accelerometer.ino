@@ -10,26 +10,26 @@ Adafruit_Arcada arcada;
 
 // system configuration parameters
 const double FS = 100;                 // Sample rate, Hz
-const double LP_FC = 40;               // Cutoff frequency for low pass, Hz
+const double LP_FC = 20;               // Cutoff frequency for low pass, Hz
 const double LP_FN = 2 * LP_FC / FS;   // LP normalized freq
-const float MOVE_TIME = 0.25*60*1000;  // time to decide about notification, ms
+const float MOVE_TIME = .25*60*1000;  // time to decide about notification, ms
 const float BEEP_TIME = 5 * 1000;      // beep every 5 seconds until movement
 const float SAMPLE_TIME = 10 / FS;
 
 // define pins and constants relating to flex sensor
-const int FLEX_PIN = A0;
+const int FLEX_PIN = A2;
 const float VCC = 4.16;   // configure to vcc of your setup
-const float DIV_R = 10e3; // second resistor in voltage divider resistance
+const float DIV_R = 1; // second resistor in voltage divider resistance in 10 kOhms
 
 // create window for running average, used for movement detection
-const int ACCEL_N_INPUTS = FS * 2; // FS * seconds of data desired
+const int ACCEL_N_INPUTS = FS * .35; // FS * seconds of data desired
 float accelInputs[ACCEL_N_INPUTS];
 float accelSum = 0;
 unsigned int accelIdx = 0;
 
 // define movement detection variables
 const float MOVE_THRESHOLD = 0.17; // below threshold means not moving
-const int STAND_THRESHOLD = 22000;
+const float STAND_THRESHOLD = 2.2;
 
 // define timer to control sample rate
 elapsedMillis samplingTimer;
@@ -63,7 +63,7 @@ void updateAccel(float *accelMag, float *accelAvg) {
         float zsq = sq(event.acceleration.z);
 
         // combine each direction into single magnitude
-        *accelMag = sqrt(xsq + ysq + zsq);
+        *accelMag = abs(sqrt(xsq + ysq + zsq) - 9.3);
 
         // filter acceleration magnitude through lowpass butterworth
         *accelMag = lpFilter(*accelMag);
@@ -125,11 +125,11 @@ void loop() {
         Serial.print(",");
         Serial.print(*accelAvg);
         Serial.print(",");
-        Serial.print(standingDetected * 3 *1000);
+        Serial.print(standingDetected * 3);
         Serial.print(",");
-        Serial.print(movementDetected * 4 *1000);
+        Serial.print(movementDetected * 4);
         Serial.print(",");
-        Serial.print((movementDetected && standingDetected)* 5 *1000);
+        Serial.print((movementDetected && standingDetected)* 5 );
         Serial.print(",");
         Serial.print(resistance);
         Serial.print("\n");
@@ -139,7 +139,8 @@ void loop() {
         } else if ((moveTimer >= MOVE_TIME) && (beepTimer >= BEEP_TIME)) {
             // if user hasn't moved recently enough and device hasn't beeped
             // recently then beep device, beware causes sensor funkiness
-            beepTimer -= BEEP_TIME;
+            //beepTimer -= BEEP_TIME;
+            beepTimer = 0;
             arcada.enableSpeaker(true);
             playSound(audio, sizeof(audio));
             arcada.enableSpeaker(false);
@@ -150,13 +151,13 @@ void loop() {
         arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK); // clear screen
         arcada.display->setCursor(0, 0);
         char a[10];
-        sprintf(a, "Z: %8.1f", *accelAvg);
+        sprintf(a, "Z: %6.3f", *accelAvg);
         arcada.display->print(a);
 
         // show resistance on pybadge
         arcada.display->setCursor(0, 16);
         char r[10];
-        sprintf(r, "R: %6.0f", resistance);
+        sprintf(r, "R: %6.3f", resistance);
         arcada.display->print(r);
 #endif
 
