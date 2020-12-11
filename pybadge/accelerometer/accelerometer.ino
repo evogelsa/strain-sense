@@ -88,9 +88,8 @@ void updateAccel(float *accelMag, float *accelAvg) {
 
 void setup() {
     // initialize serial connection
-    Serial.begin(9600);
+    Serial.begin(115200);
 
-    // init pybadge
     arcada.arcadaBegin();
 
 #ifdef DO_DISPLAY
@@ -100,13 +99,16 @@ void setup() {
         arcada.setBacklight(i);
         delay(1);
     }
+    arcada.display->fillRect(0, 0, 160, 128, ARCADA_BLACK); // clear screen
 #endif
 }
 
 void loop() {
     if (samplingTimer >= SAMPLE_TIME) {
         samplingTimer -= SAMPLE_TIME;
-        float *accelMag, *accelAvg;
+
+        float *accelMag = (float*) malloc(sizeof(float));
+        float *accelAvg = (float*) malloc(sizeof(float));
         updateAccel(accelMag, accelAvg);
 
         // measure resistance from flex sensor voltage divider
@@ -157,5 +159,8 @@ void loop() {
         sprintf(r, "R: %6.0f", resistance);
         arcada.display->print(r);
 #endif
+
+        free(accelMag);
+        free(accelAvg);
     }
 }
