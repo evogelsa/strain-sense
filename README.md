@@ -4,13 +4,8 @@
 
 The wearable device is attached to the user with an adhesive, but in future
 version it would be integrated into clothing. The accelerometer and main device
-is attached to the lower back region like in the below example.
-
-![Lower back][PyBadge]
-
-The flex sensor gets mounted below the knee of the user in a similar fashion.
-
-![Knee][flex]
+is attached to the lower back region via adhesive, and the flex sensor is
+mounted below the knee of the user in a similar fashion.
 
 Data from the two sensors is processed onboard the PyBadge device. Two states
 are considered during operation of the device. Using the accelerometer, we are
@@ -88,8 +83,6 @@ Example videos of the device and of webportal can be viewed in the
 [examples](/examples) directory.
 
 [flex-schem]: https://i.imgur.com/NrKf4Wi.png
-[PyBadge]: https://cdn.discordapp.com/attachments/539516208161226754/787091452118695976/image0.jpg
-[flex]: https://cdn.discordapp.com/attachments/539516208161226754/787091452706553866/image1.jpg
 [lowpass]: https://i.imgur.com/hZTa0sJ.jpeg
 [adafruit-pybadge]: https://learn.adafruit.com/adafruit-pybadge/using-with-arduino-ide
 [server]: https://ethanvogelsang.com/wearables/login
